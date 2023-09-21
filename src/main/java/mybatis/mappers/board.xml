@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+      PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="mapper.board">
+
+	<resultMap id="boardMap" type="BoardDTO">
+		<result property="boardid" column="BOARDID"/>
+		<result property="title" column="TITLE"/>
+		<result property="contents" column="CONTENTS"/>
+		<result property="writer_uid" column="WRITER_UID"/>
+		<result property="reg_date" column="REG_DATE"/>
+		<result property="mod_date" column="MOD_DATE"/>
+		<result property="view_count" column="VIEW_COUNT"/>
+		<result property="delete_yn" column="DELETE_YN"/>
+	</resultMap>
+
+	<!--페이징 코드 -->	
+  <select id="getBoardList" resultType="BoardDTO">
+    select * from (
+        select rownum nrow, b.* from (
+            select
+                level, pid, boardid, title, writer_uid, reg_date, view_count
+            from board a
+            <if test="searchTitle != '' and searchTitle != null">
+                where title like concat(concat('%', #{searchTitle}), '%')
+            </if>
+            start with pid=0
+            CONNECT BY PRIOR boardid = pid
+            order SIBLINGS by boardid desc
+        ) b
+        where rownum &lt;= #{endNo}
+    ) O
+    where nrow between #{startNo} and #{endNo}
+</select>
+  
+	<insert id="insertBoard"> 
+	    INSERT INTO board (
+	          BOARDID
+	        , CONTENTS
+	        , TITLE
+	        , WRITER_UID
+	        , REG_DATE
+	    ) VALUES (
+	          board_seq.nextval
+	        , #{contents}
+	        , #{title}
+	        , #{writer_uid}
+	        , sysdate
+	    )
+	</insert>	
+	
+	<insert id="insertBoardReply" >
+		<selectKey keyProperty="boardid" resultType="int"  order="BEFORE">
+			select 
+				seq_board.nextval boardid 
+			from dual
+		</selectKey>
+		INSERT INTO board (
+			  pid
+			, boardid
+			, title
+			, contents
+			, writer_uid
+			, reg_date
+		) VALUES (
+		      #{pid} 
+			, #{boardid}
+			, #{title}
+			, #{contents}
+			, #{writer_uid}
+			, sysdate
+		)
+	</insert>
+	
+	<!-- 상세보기 -->	 	
+	
+	<select id="detailBoard" resultType="boardDTO" >
+         SELECT *
+     	 FROM board
+      	 WHERE boardid = #{boardId}
+   
+    </select>
+	
+	  <!-- 수정하기 -->
+	
+	   <update id="boardUpdate">
+          UPDATE board
+             SET
+             title = #{title},
+             contents = #{contents},
+             fixed_yn = #{fixedYn},
+             mod_date = sysdate
+          	WHERE boardid = #{boardId}
+   	</update>
+	
+	<!-- 삭제하기 -->
+	<delete id="boardDelete">
+      DELETE FROM board
+     WHERE boardid = #{boardId}
+   </delete>
+	
+	 <!-- 게시판 탑5 -->
+	<select id="boardTop5" resultMap="boardMap"> 
+		<![CDATA[
+			SELECT 
+ 				ROWNUM, SUB.*
+			FROM ( 
+				SELECT 
+					*  
+				FROM BOARD 
+				ORDER BY BOARD.boardid DESC
+		) SUB  
+ 			WHERE ROWNUM <=5 
+		]]> 
+	</select>
+	
+	<select id ="totalCount" resultType="int">
+		select count(*)
+		from board
+	</select>
+	 
+	<!-- 조회수 증가 쿼리 -->
+	<update id="ViewCount">
+    UPDATE board
+    SET VIEW_COUNT = VIEW_COUNT + 1
+    WHERE boardid = #{boardId}
+	</update>
+	
+	
+	
+</mapper>

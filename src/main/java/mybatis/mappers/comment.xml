@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+      PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+   
+   <mapper namespace="mapper.comment">
+   
+	<!--댓글 등록 ! ! !-->
+	
+	<insert id="insertCommentBoard"> 
+	
+	<selectKey keyProperty="COMMENTID, reg_date" resultType="int"  order="BEFORE">
+			select 
+				SYSDATE
+				reg_date,
+				SEQ_COMMENT.nextval COMMENTID 
+			from dual
+		</selectKey>	
+	
+	    INSERT INTO BOARD_COMMENT (
+	          BOARD_ID
+	        , CONTENTS
+	        , WRITER_UID
+	        , REG_DATE
+	        ,COMMENTID
+	    ) VALUES (
+	        , #{BOARD_ID}
+	        , #{CONTENTS}
+	        , #{WRITER_UID}
+	        , SYSDATE
+	        , #{COMMENTID}
+		)
+	</insert>
+	
+<!-- 	<select id="getcomment"> -->
+<!-- 		SELECT *FROM BOARD_COMMENT -->
+<!-- 		WHERE COMMENTID = #{COMMENTID} -->
+<!-- 	</select> -->
+	
+	<select id ="listcomment" resultType="CommentDTO">
+		SELECT *
+		FROM BOARD_COMMENT
+		ORDER BY COMMENTID DESC
+	</select>
+	
+	
+	
+	</mapper>
